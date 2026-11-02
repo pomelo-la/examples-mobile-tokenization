@@ -1,5 +1,6 @@
 package com.example.example_google_upp.a2a.models
 
+import com.example.example_google_upp.model.Brand
 import com.google.gson.Gson
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
@@ -118,5 +119,25 @@ class VisaA2aPayloadTest {
 
         assertNotNull(result)
         assertEquals("5678", result?.panLast4)
+    }
+
+    @Test
+    fun `toA2aCard mapea tokenReferenceID, panLast4 y marca VISA`() {
+        val card = VisaA2aPayload(tokenReferenceID = "TOKEN-1", panLast4 = "1234").toA2aCard()
+
+        assertEquals(A2aCard(tokenId = "TOKEN-1", lastFour = "1234", brand = Brand.VISA), card)
+    }
+
+    @Test
+    fun `toA2aCard sin panLast4 usa placeholder`() {
+        val card = VisaA2aPayload(tokenReferenceID = "TOKEN-1").toA2aCard()
+
+        assertEquals("••••", card?.lastFour)
+    }
+
+    @Test
+    fun `toA2aCard sin tokenReferenceID devuelve null`() {
+        assertNull(VisaA2aPayload(panLast4 = "1234").toA2aCard())
+        assertNull(VisaA2aPayload(tokenReferenceID = "  ", panLast4 = "1234").toA2aCard())
     }
 }

@@ -2,9 +2,9 @@ package com.example.example_google_upp.a2a
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.example_google_upp.a2a.models.A2aCard
 import com.example.example_google_upp.a2a.models.AppToAppUiState
 import com.example.example_google_upp.a2a.models.StepUpResult
-import com.example.example_google_upp.a2a.models.VisaA2aPayload
 import com.example.example_google_upp.data.BackendService
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -15,10 +15,11 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 
 /**
- * ViewModel para el flujo de App-to-App Verification con biometría.
+ * ViewModel compartido para el flujo de App-to-App Verification con biometría, independiente de la
+ * marca: cada Activity (Visa, Mastercard) mapea su payload a un [A2aCard] y lo pasa a [init].
  *
  * Responsabilidades:
- * - Validar el payload y el caller al iniciar.
+ * - Validar la tarjeta y el caller al iniciar.
  * - Gestionar el estado de UI a través de [AppToAppUiState].
  * - Coordinar la autenticación biométrica (antes de mostrar datos).
  * - Llamar al backend para activar el token.
@@ -49,30 +50,31 @@ class AppToAppViewModel(
     private val _finalResult = MutableSharedFlow<StepUpResult>(replay = 1, extraBufferCapacity = 0)
     val finalResult: SharedFlow<StepUpResult> = _finalResult.asSharedFlow()
 
-    private var currentPayload: VisaA2aPayload? = null
+    private var currentCard: A2aCard? = null
 
     /**
-     * Inicializa el ViewModel con el payload y la validación del caller.
+     * Inicializa el ViewModel con la tarjeta y la validación del caller.
      *
-     * Si el payload es nulo o el caller no es válido, devuelve el control a Google Wallet
-     * directamente emitiendo [StepUpResult.Failure] por [finalResult], sin pasar por ningún
-     * estado de UI dedicado: no hay nada que el usuario pueda hacer ante un request inválido, así
-     * que no tiene sentido mostrarle una pantalla de error a la que nunca hay que reaccionar.
+     * Si la tarjeta es nula (payload ausente o inválido) o el caller no es válido, devuelve el
+     * control a Google Wallet directamente emitiendo [StepUpResult.Failure] por [finalResult], sin
+     * pasar por ningún estado de UI dedicado: no hay nada que el usuario pueda hacer ante un
+     * request inválido, así que no tiene sentido mostrarle una pantalla de error a la que nunca
+     * hay que reaccionar.
      * Si todo es válido, pasa al estado BiometricPrompt para solicitar biometría.
      *
-     * @param payload El payload de Visa parseado desde Intent.EXTRA_TEXT.
+     * @param card La tarjeta mapeada desde el payload de la marca, o null si el payload es inválido.
      * @param isValidCaller true si el caller es Google Wallet.
      */
-    fun init(payload: VisaA2aPayload?, isValidCaller: Boolean) {
+    fun init(card: A2aCard?, isValidCaller: Boolean) {
         when {
-            payload == null -> {
+            card == null -> {
                 _finalResult.tryEmit(StepUpResult.Failure("Invalid or missing payload"))
             }
             !isValidCaller -> {
                 _finalResult.tryEmit(StepUpResult.Failure("Invalid caller: not Google Wallet"))
             }
             else -> {
-                currentPayload = payload
+                currentCard = card
                 // Ir a estado de biometría - ANTES de mostrar cualquier dato
                 _uiState.value = AppToAppUiState.BiometricPrompt
             }
@@ -84,8 +86,8 @@ class AppToAppViewModel(
      * Ahora podemos mostrar los datos de la tarjeta.
      */
     fun onAuthenticationConfirmed() {
-        currentPayload?.let { payload ->
-            _uiState.value = AppToAppUiState.AwaitingConfirmation(payload)
+        currentCard?.let { card ->
+            _uiState.value = AppToAppUiState.AwaitingConfirmation(card)
         }
     }
 
@@ -127,15 +129,15 @@ class AppToAppViewModel(
      * intermedia entre "Activando..." y que la Activity cierre.
      */
     fun onActivate() {
-        val payload = currentPayload
-        if (payload == null || _uiState.value !is AppToAppUiState.AwaitingConfirmation) return
+        val card = currentCard
+        if (card == null || _uiState.value !is AppToAppUiState.AwaitingConfirmation) return
 
-        _uiState.value = AppToAppUiState.Activating(payload)
+        _uiState.value = AppToAppUiState.Activating(card)
 
         viewModelScope.launch {
             try {
                 backendService.activateToken(
-                    tokenId = payload.tokenReferenceID.orEmpty(),
+                    tokenId = card.tokenId,
                     motive = "APP_TO_APP_ACTIVATION",
                 )
                 _finalResult.tryEmit(StepUpResult.Approved)

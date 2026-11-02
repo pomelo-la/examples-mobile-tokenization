@@ -4,7 +4,7 @@ package com.example.example_google_upp.a2a.models
  * Estados de UI para el flujo de App-to-App Verification con biometría.
  *
  * El flujo es:
- * 1. Loading (validando payload y caller)
+ * 1. Loading (validando tarjeta y caller)
  * 2. BiometricPrompt (mostrando biometría - ANTES de mostrar datos)
  * 3. AwaitingConfirmation (mostrando tarjeta, esperando confirmación para activar)
  * 4. Activating (llamando al backend)
@@ -30,10 +30,10 @@ sealed interface AppToAppUiState {
      * Biometría exitosa, mostrando los datos de la tarjeta y esperando
      * confirmación para activar.
      */
-    data class AwaitingConfirmation(val payload: VisaA2aPayload) : AppToAppUiState
+    data class AwaitingConfirmation(val card: A2aCard) : AppToAppUiState
 
     /**
      * Activando el token (llamando al backend).
      */
-    data class Activating(val payload: VisaA2aPayload) : AppToAppUiState
+    data class Activating(val card: A2aCard) : AppToAppUiState
 }

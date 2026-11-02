@@ -80,7 +80,7 @@ Este es un flujo distinto e independiente del anterior: no lo inicia el usuario 
 sequenceDiagram
     participant User as Tarjetahabiente
     participant GW as Google Wallet
-    participant A2A as AppToAppVerificationActivity
+    participant A2A as VisaAppToAppVerificationActivity
     participant Bio as BiometricPrompt
     participant VM as AppToAppViewModel
     participant Backend as Backend App
@@ -108,7 +108,7 @@ sequenceDiagram
     A2A->>GW: setResult(STEP_UP_RESPONSE: "approved")
 ```
 
-Para el detalle completo de este flujo (biometria, manejo de cancelacion/error, formato del payload de Visa) mira la seccion [App-to-App Verification (A2A)](app/README.md#app-to-app-verification-a2a) en `app/README.md`.
+Para el detalle completo de este flujo (biometria, manejo de cancelacion/error, formato del payload de Visa y de Mastercard) mira la seccion [App-to-App Verification (A2A)](app/README.md#app-to-app-verification-a2a) en `app/README.md`.
 
 ## Segui leyendo
 

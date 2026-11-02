@@ -1,5 +1,6 @@
 package com.example.example_google_upp.a2a.models
 
+import com.example.example_google_upp.model.Brand
 import com.google.gson.Gson
 import com.google.gson.annotations.SerializedName
 import java.util.Base64
@@ -56,4 +57,18 @@ data class VisaA2aPayload(
             }
         }
     }
+}
+
+/**
+ * Mapea el payload de Visa al modelo neutral [A2aCard].
+ *
+ * @return La [A2aCard], o null si falta el `tokenReferenceID` (no se puede activar sin él).
+ */
+fun VisaA2aPayload.toA2aCard(): A2aCard? {
+    val tokenId = tokenReferenceID?.takeIf { it.isNotBlank() } ?: return null
+    return A2aCard(
+        tokenId = tokenId,
+        lastFour = panLast4 ?: "••••",
+        brand = Brand.VISA,
+    )
 }

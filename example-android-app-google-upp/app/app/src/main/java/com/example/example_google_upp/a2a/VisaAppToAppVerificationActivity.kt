@@ -13,12 +13,14 @@ import androidx.lifecycle.repeatOnLifecycle
 import com.example.example_google_upp.a2a.models.AppToAppUiState
 import com.example.example_google_upp.a2a.models.StepUpResult
 import com.example.example_google_upp.a2a.models.VisaA2aPayload
+import com.example.example_google_upp.a2a.models.toA2aCard
 import com.example.example_google_upp.ui.theme.ExamplegoogleuppTheme
 import kotlinx.coroutines.launch
 import org.koin.androidx.viewmodel.ext.android.viewModel
 
 /**
- * Activity que maneja el flujo de App-to-App Verification (A2A) de Google Wallet.
+ * Activity que maneja el flujo de App-to-App Verification (A2A) de Google Wallet para Visa.
+ * Para Mastercard ver [MastercardAppToAppVerificationActivity].
  *
  * Google Wallet invoca esta Activity cuando necesita verificar la identidad del titular de una
  * tarjeta Visa durante el flujo de agregado (Yellow Path). El Intent contiene el payload de Visa en
@@ -33,7 +35,7 @@ import org.koin.androidx.viewmodel.ext.android.viewModel
  *
  * Docs: https://developers.google.com/pay/issuers/tsp-integration/app-to-app-idv
  */
-class AppToAppVerificationActivity : FragmentActivity() {
+class VisaAppToAppVerificationActivity : FragmentActivity() {
 
     private val viewModel: AppToAppViewModel by viewModel()
     private lateinit var biometricAuthenticator: BiometricAuthenticator
@@ -49,10 +51,10 @@ class AppToAppVerificationActivity : FragmentActivity() {
         val payload = VisaA2aPayload.fromExtraText(extraText)
 
         // Validar que el caller sea Google Wallet
-        val isValidCaller = true // CallerValidator.isGoogleWallet(callingPackage)
+        val isValidCaller = CallerValidator.isGoogleWallet(callingPackage)
 
         // Inicializar el ViewModel
-        viewModel.init(payload, isValidCaller)
+        viewModel.init(payload?.toA2aCard(), isValidCaller)
 
         setContent {
             ExamplegoogleuppTheme(dynamicColor = true) {
@@ -118,7 +120,7 @@ class AppToAppVerificationActivity : FragmentActivity() {
 
     /** Finaliza la Activity devolviendo el resultado a Google Wallet. */
     private fun finishWithResult(result: StepUpResult) {
-        val resultIntent = StepUpResultResolver.toResultIntent(result)
+        val resultIntent = VisaStepUpResultResolver.toResultIntent(result)
         setResult(RESULT_OK, resultIntent)
         finish()
     }

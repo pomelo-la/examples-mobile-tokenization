@@ -5,12 +5,14 @@ import com.example.example_google_upp.a2a.models.StepUpResult
 
 /**
  * Traduce el resultado del flujo de App-to-App Verification en un Intent con el extra
- * `STEP_UP_RESPONSE` que Google Wallet espera recibir.
+ * `STEP_UP_RESPONSE` que Google Wallet espera recibir de una app emisora para Visa.
+ *
+ * Formato de Visa: `STEP_UP_RESPONSE` = `approved`, `declined` o `failure` (en minúsculas).
  *
  * Docs:
  * https://developers.google.com/pay/issuers/tsp-integration/app-to-app-idv
  */
-object StepUpResultResolver {
+object VisaStepUpResultResolver {
     private const val STEP_UP_RESPONSE_EXTRA = "STEP_UP_RESPONSE"
 
     /**
