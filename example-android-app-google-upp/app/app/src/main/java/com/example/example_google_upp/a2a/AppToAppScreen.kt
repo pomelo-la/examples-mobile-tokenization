@@ -21,10 +21,10 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import com.example.example_google_upp.a2a.models.A2aCard
 import com.example.example_google_upp.a2a.models.AppToAppUiState
 import com.example.example_google_upp.a2a.models.StepUpResult
 import com.example.example_google_upp.components.PomeloCardComposable
-import com.example.example_google_upp.model.Brand
 import com.example.example_google_upp.model.Card
 import com.example.example_google_upp.ui.theme.PomeloBlack
 import com.example.example_google_upp.ui.theme.PomeloMagenta
@@ -32,10 +32,10 @@ import com.example.example_google_upp.ui.theme.PomeloTextMuted
 import com.example.example_google_upp.ui.theme.PomeloWhite
 
 /**
- * Pantalla de App-to-App Verification con biometría.
+ * Pantalla compartida de App-to-App Verification con biometría (independiente de la marca).
  *
  * El flujo es:
- * 1. Loading: validando payload y caller
+ * 1. Loading: validando tarjeta y caller
  * 2. BiometricPrompt: mostrando indicador de biometría (sin datos de tarjeta visibles)
  * 3. AwaitingConfirmation: biometría exitosa, mostrando tarjeta y botón para activar
  * 4. Activating: llamando al backend
@@ -67,13 +67,13 @@ fun AppToAppScreen(uiState: AppToAppUiState, onActivate: () -> Unit) {
 
             is AppToAppUiState.AwaitingConfirmation -> {
                 AwaitingConfirmationContent(
-                    panLast4 = uiState.payload.panLast4 ?: "••••",
+                    card = uiState.card,
                     onActivate = onActivate,
                 )
             }
 
             is AppToAppUiState.Activating -> {
-                ActivatingContent(panLast4 = uiState.payload.panLast4 ?: "••••")
+                ActivatingContent(card = uiState.card)
             }
         }
     }
@@ -113,7 +113,7 @@ private fun BiometricPromptContent() {
 }
 
 @Composable
-private fun AwaitingConfirmationContent(panLast4: String, onActivate: () -> Unit) {
+private fun AwaitingConfirmationContent(card: A2aCard, onActivate: () -> Unit) {
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(24.dp),
@@ -125,7 +125,7 @@ private fun AwaitingConfirmationContent(panLast4: String, onActivate: () -> Unit
             textAlign = TextAlign.Center,
         )
 
-        A2ACardDisplay(panLast4 = panLast4)
+        A2ACardDisplay(card = card)
 
         Spacer(modifier = Modifier.height(8.dp))
 
@@ -151,7 +151,7 @@ private fun AwaitingConfirmationContent(panLast4: String, onActivate: () -> Unit
 }
 
 @Composable
-private fun ActivatingContent(panLast4: String) {
+private fun ActivatingContent(card: A2aCard) {
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(24.dp),
@@ -163,7 +163,7 @@ private fun ActivatingContent(panLast4: String) {
             textAlign = TextAlign.Center,
         )
 
-        A2ACardDisplay(panLast4 = panLast4)
+        A2ACardDisplay(card = card)
 
         Spacer(modifier = Modifier.height(8.dp))
 
@@ -180,15 +180,15 @@ private fun ActivatingContent(panLast4: String) {
 
 /** Representación de la tarjeta usando PomeloCardComposable. */
 @Composable
-private fun A2ACardDisplay(panLast4: String) {
+private fun A2ACardDisplay(card: A2aCard) {
     PomeloCardComposable(
         card =
             Card(
                 cardId = "a2a-card",
                 userId = "a2a-user",
-                lastFour = panLast4,
+                lastFour = card.lastFour,
                 cardholderName = "",
-                brand = Brand.VISA,
+                brand = card.brand,
             )
     )
 }

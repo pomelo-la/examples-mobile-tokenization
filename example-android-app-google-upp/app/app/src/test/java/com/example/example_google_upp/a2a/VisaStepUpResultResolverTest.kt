@@ -10,39 +10,39 @@ import org.robolectric.annotation.Config
 
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [34])
-class StepUpResultResolverTest {
+class VisaStepUpResultResolverTest {
 
     @Test
     fun `Approved devuelve extra STEP_UP_RESPONSE igual a approved`() {
-        val intent = StepUpResultResolver.toResultIntent(StepUpResult.Approved)
+        val intent = VisaStepUpResultResolver.toResultIntent(StepUpResult.Approved)
 
         assertEquals("approved", intent.getStringExtra("STEP_UP_RESPONSE"))
     }
 
     @Test
     fun `Declined devuelve extra STEP_UP_RESPONSE igual a declined`() {
-        val intent = StepUpResultResolver.toResultIntent(StepUpResult.Declined)
+        val intent = VisaStepUpResultResolver.toResultIntent(StepUpResult.Declined)
 
         assertEquals("declined", intent.getStringExtra("STEP_UP_RESPONSE"))
     }
 
     @Test
     fun `Failure devuelve extra STEP_UP_RESPONSE igual a failure`() {
-        val intent = StepUpResultResolver.toResultIntent(StepUpResult.Failure("Network error"))
+        val intent = VisaStepUpResultResolver.toResultIntent(StepUpResult.Failure("Network error"))
 
         assertEquals("failure", intent.getStringExtra("STEP_UP_RESPONSE"))
     }
 
     @Test
     fun `Failure con mensaje nulo devuelve failure`() {
-        val intent = StepUpResultResolver.toResultIntent(StepUpResult.Failure(null))
+        val intent = VisaStepUpResultResolver.toResultIntent(StepUpResult.Failure(null))
 
         assertEquals("failure", intent.getStringExtra("STEP_UP_RESPONSE"))
     }
 
     @Test
     fun `Failure con mensaje vacio devuelve failure`() {
-        val intent = StepUpResultResolver.toResultIntent(StepUpResult.Failure(""))
+        val intent = VisaStepUpResultResolver.toResultIntent(StepUpResult.Failure(""))
 
         assertEquals("failure", intent.getStringExtra("STEP_UP_RESPONSE"))
     }

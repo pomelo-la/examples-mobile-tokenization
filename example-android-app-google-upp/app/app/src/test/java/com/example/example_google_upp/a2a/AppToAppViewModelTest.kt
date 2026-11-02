@@ -1,9 +1,10 @@
 package com.example.example_google_upp.a2a
 
+import com.example.example_google_upp.a2a.models.A2aCard
 import com.example.example_google_upp.a2a.models.AppToAppUiState
 import com.example.example_google_upp.a2a.models.StepUpResult
-import com.example.example_google_upp.a2a.models.VisaA2aPayload
 import com.example.example_google_upp.data.BackendService
+import com.example.example_google_upp.model.Brand
 import io.ktor.client.HttpClient
 import io.ktor.client.engine.mock.MockEngine
 import io.ktor.client.engine.mock.respond
@@ -25,13 +26,10 @@ import org.junit.Test
 @OptIn(ExperimentalCoroutinesApi::class)
 class AppToAppViewModelTest {
 
-    private val validPayload = VisaA2aPayload(
-        panReferenceID = "V-123",
-        tokenRequestorID = "TR-456",
-        tokenReferenceID = "TOKEN-789",
-        panLast4 = "1234",
-        deviceID = "device-123",
-        walletAccountID = "wallet-456"
+    private val validCard = A2aCard(
+        tokenId = "TOKEN-789",
+        lastFour = "1234",
+        brand = Brand.VISA,
     )
 
     private val testDispatcher = StandardTestDispatcher()
@@ -47,11 +45,11 @@ class AppToAppViewModelTest {
     }
 
     @Test
-    fun `payload invalido al iniciar emite Failure sin pasar por biometria ni por un estado de UI dedicado`() =
+    fun `tarjeta nula al iniciar emite Failure sin pasar por biometria ni por un estado de UI dedicado`() =
         runTest(testDispatcher) {
             val viewModel = AppToAppViewModel(createService())
 
-            viewModel.init(payload = null, isValidCaller = true)
+            viewModel.init(card = null, isValidCaller = true)
 
             // Avanzar hasta que todas las coroutines terminen
             advanceUntilIdle()
@@ -70,7 +68,7 @@ class AppToAppViewModelTest {
         runTest(testDispatcher) {
             val viewModel = AppToAppViewModel(createService())
 
-            viewModel.init(payload = validPayload, isValidCaller = false)
+            viewModel.init(card = validCard, isValidCaller = false)
 
             // Avanzar hasta que todas las coroutines terminen
             advanceUntilIdle()
@@ -83,10 +81,10 @@ class AppToAppViewModelTest {
         }
 
     @Test
-    fun `payload y caller validos inicializan en BiometricPrompt`() = runTest(testDispatcher) {
+    fun `tarjeta y caller validos inicializan en BiometricPrompt`() = runTest(testDispatcher) {
         val viewModel = AppToAppViewModel(createService())
 
-        viewModel.init(payload = validPayload, isValidCaller = true)
+        viewModel.init(card = validCard, isValidCaller = true)
 
         // Avanzar hasta que todas las coroutines terminen
         advanceUntilIdle()
@@ -99,7 +97,7 @@ class AppToAppViewModelTest {
     fun `onAuthenticationConfirmed despues de biometria exitosa pasa a AwaitingConfirmation`() = runTest(testDispatcher) {
         val viewModel = AppToAppViewModel(createService())
 
-        viewModel.init(payload = validPayload, isValidCaller = true)
+        viewModel.init(card = validCard, isValidCaller = true)
 
         // Avanzar hasta que todas las coroutines terminen
         advanceUntilIdle()
@@ -108,14 +106,14 @@ class AppToAppViewModelTest {
 
         val uiState = viewModel.uiState.value
         assertTrue(uiState is AppToAppUiState.AwaitingConfirmation)
-        assertEquals(validPayload, (uiState as AppToAppUiState.AwaitingConfirmation).payload)
+        assertEquals(validCard, (uiState as AppToAppUiState.AwaitingConfirmation).card)
     }
 
     @Test
     fun `onAuthenticationDeclined emite Declined sin pasar por un estado de UI dedicado`() = runTest(testDispatcher) {
         val viewModel = AppToAppViewModel(createService())
 
-        viewModel.init(payload = validPayload, isValidCaller = true)
+        viewModel.init(card = validCard, isValidCaller = true)
 
         // Avanzar hasta que todas las coroutines terminen
         advanceUntilIdle()
@@ -137,7 +135,7 @@ class AppToAppViewModelTest {
     fun `onBiometricNotAvailable emite Failure sin pasar por un estado de UI dedicado`() = runTest(testDispatcher) {
         val viewModel = AppToAppViewModel(createService())
 
-        viewModel.init(payload = validPayload, isValidCaller = true)
+        viewModel.init(card = validCard, isValidCaller = true)
 
         // Avanzar hasta que todas las coroutines terminen
         advanceUntilIdle()
@@ -161,7 +159,7 @@ class AppToAppViewModelTest {
         runTest(testDispatcher) {
             val viewModel = AppToAppViewModel(createService())
 
-            viewModel.init(payload = validPayload, isValidCaller = true)
+            viewModel.init(card = validCard, isValidCaller = true)
 
             // Avanzar hasta que todas las coroutines terminen
             advanceUntilIdle()
@@ -184,7 +182,7 @@ class AppToAppViewModelTest {
             val service = createService(activateTokenSuccess = true)
             val viewModel = AppToAppViewModel(service)
 
-            viewModel.init(payload = validPayload, isValidCaller = true)
+            viewModel.init(card = validCard, isValidCaller = true)
 
             // Avanzar hasta que todas las coroutines terminen
             advanceUntilIdle()
@@ -209,7 +207,7 @@ class AppToAppViewModelTest {
             val service = createService(activateTokenSuccess = false)
             val viewModel = AppToAppViewModel(service)
 
-            viewModel.init(payload = validPayload, isValidCaller = true)
+            viewModel.init(card = validCard, isValidCaller = true)
 
             // Avanzar hasta que todas las coroutines terminen
             advanceUntilIdle()
@@ -234,7 +232,7 @@ class AppToAppViewModelTest {
         val service = BackendService.createForTest(mockEngine)
         val viewModel = AppToAppViewModel(service)
 
-        viewModel.init(payload = validPayload, isValidCaller = true)
+        viewModel.init(card = validCard, isValidCaller = true)
 
         // Avanzar hasta que todas las coroutines terminen
         advanceUntilIdle()
@@ -274,7 +272,7 @@ class AppToAppViewModelTest {
         val service = BackendService.createForTest(mockEngine)
         val viewModel = AppToAppViewModel(service)
 
-        viewModel.init(payload = validPayload, isValidCaller = true)
+        viewModel.init(card = validCard, isValidCaller = true)
         advanceUntilIdle()
 
         viewModel.onAuthenticationConfirmed()

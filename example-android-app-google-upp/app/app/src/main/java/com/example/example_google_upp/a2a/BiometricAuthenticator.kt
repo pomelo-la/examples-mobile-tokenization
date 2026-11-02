@@ -6,7 +6,7 @@ import androidx.fragment.app.FragmentActivity
 import java.util.concurrent.Executor
 
 /**
- * Maneja la autenticación biométrica para el flujo de App-to-App Verification.
+ * Maneja la autenticación biométrica (compartida por todas las marcas) para el flujo de App-to-App Verification.
  *
  * Esta clase envuelve BiometricPrompt y proporciona callbacks simples para
  * éxito, cancelación y error.

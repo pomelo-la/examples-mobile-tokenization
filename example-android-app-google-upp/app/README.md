@@ -163,21 +163,22 @@ Referencia oficial: [Bounce Provisioning](https://developers.google.com/pay/issu
 
 ### App-to-App Verification (A2A)
 
-App-to-App Verification (también conocido como App-to-App IDV) permite a Google Wallet invocar directamente la app del emisor cuando necesita verificar la identidad del titular antes de activar un token (Yellow Path). En lugar de enviar un OTP por SMS/email, Google Wallet lanza esta app con el payload de Visa en Base64URL.
+App-to-App Verification (también conocido como App-to-App IDV) permite a Google Wallet invocar directamente la app del emisor cuando necesita verificar la identidad del titular antes de activar un token (Yellow Path). En lugar de enviar un OTP por SMS/email, Google Wallet lanza esta app con el payload de la marca en Base64 (Base64URL para Visa, Base64 estándar para Mastercard). Hay una Activity por marca (`VisaAppToAppVerificationActivity` y `MastercardAppToAppVerificationActivity`) que comparten el `AppToAppViewModel`, la pantalla y la biometría; cada una mapea su payload al modelo neutral `A2aCard`. Un emisor que opera una sola marca puede implementar solo la Activity correspondiente.
 
-La integración tiene cinco partes:
+La integración tiene seis partes (los diagramas muestran el flujo de Visa; el de Mastercard es equivalente):
 
-1. **Manifest**: se declara un `intent-filter` con la acción `com.example.example_google_upp.a2a` (formato fijo definido por Visa) y la categoría `DEFAULT` en `AppToAppVerificationActivity`. Google Wallet usa esta acción para invocar la app emisora.
+1. **Manifest**: se declara un `intent-filter` con la acción `com.example.example_google_upp.a2a` (formato fijo definido por Visa) y la categoría `DEFAULT` en `VisaAppToAppVerificationActivity`. Google Wallet usa esta acción para invocar la app emisora. Para Mastercard, `MastercardAppToAppVerificationActivity` declara su propia acción (en el ejemplo `com.example.example_google_upp.action.ACTIVATE_TOKEN`): la define el emisor, debe informarse a Pomelo en el formulario de habilitación y coincidir exactamente con la configurada en MDES; si no coincide, Google Wallet abre la Play Store en lugar de la app.
 2. **BiometricAuthenticator**: maneja la autenticación biométrica usando `BiometricPrompt`. La biometría se muestra ANTES de revelar cualquier dato de la tarjeta, cumpliendo con los requisitos de seguridad de Visa.
-3. **AppToAppVerificationActivity**: recibe el Intent, parsea el payload de Visa desde `Intent.EXTRA_TEXT`, valida que el caller sea `com.google.android.gms`, muestra el prompt de biometría, y coordina el flujo de activación.
-4. **AppToAppViewModel**: gestiona el estado de UI ([AppToAppUiState]), desde `BiometricPrompt` hasta `Finished`, y llama a `BackendService.activateToken()` para activar el token en Pomelo.
-5. **Resultado**: tras la activación (o si el usuario cancela la biometría o el flujo), se devuelve el resultado a Google Wallet vía `setResult(RESULT_OK)` con el extra `STEP_UP_RESPONSE` (`"approved"`, `"declined"` o `"failure"`).
+3. **VisaAppToAppVerificationActivity**: recibe el Intent, parsea el payload de Visa (`VisaA2aPayload`, Base64URL) desde `Intent.EXTRA_TEXT`, valida que el caller sea `com.google.android.gms`, muestra el prompt de biometría, y coordina el flujo de activación.
+4. **MastercardAppToAppVerificationActivity**: igual que la de Visa, pero parsea `MastercardA2aPayload` (Base64 estándar con `paymentAppProviderId`, `paymentAppInstanceId`, `tokenUniqueReference`, `accountPanSuffix` y `accountExpiry`). Si el payload falta o es inválido, responde directamente `DECLINED` sin iniciar el flujo.
+5. **AppToAppViewModel**: gestiona el estado de UI ([AppToAppUiState]), desde `BiometricPrompt` hasta `Finished`, y llama a `BackendService.activateToken()` para activar el token en Pomelo.
+6. **Resultado**: tras la activación (o si el usuario cancela la biometría o el flujo), se devuelve el resultado a Google Wallet vía `setResult(RESULT_OK)`. Visa (`VisaStepUpResultResolver`) usa el extra `STEP_UP_RESPONSE` (`"approved"`, `"declined"` o `"failure"`). Mastercard (`MastercardAuthResultResolver`) usa los extras `issuerMobileAppAuthResponse` (`"APPROVED"`, `"DECLINED"` o `"FAILURE"`) y `tokenUniqueReference`; no se envía `TAV` porque la activación la hace el backend de Pomelo vía API.
 
 ```mermaid
 sequenceDiagram
     participant User as Tarjetahabiente
     participant GW as Google Wallet
-    participant A2A as AppToAppVerificationActivity
+    participant A2A as VisaAppToAppVerificationActivity
     participant Bio as BiometricPrompt
     participant VM as AppToAppViewModel
     participant Backend as Backend App
