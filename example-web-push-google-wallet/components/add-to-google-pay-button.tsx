@@ -1,7 +1,8 @@
 "use client";
 
 import Image from "next/image";
-import type { MouseEventHandler } from "react";
+import { useGooglePayProvisioning } from "@/lib/google/use-google-pay-provisioning";
+import type { PomeloCardResponse } from "@/lib/pomelo/cards";
 
 /**
  * "Add to Google Pay" button following Google's brand guidelines.
@@ -14,29 +15,44 @@ import type { MouseEventHandler } from "react";
  * the user's locale.
  */
 export function AddToGooglePayButton({
-	onClick,
-	locale,
-	disabled,
+	card,
 }: {
-	onClick?: MouseEventHandler<HTMLButtonElement>;
-	/** BCP 47 tag to force a specific locale (e.g. "es-419", "en-US"). */
-	locale?: string;
-	disabled?: boolean;
+	card: PomeloCardResponse;
 }) {
-	const imageUrl = locale
-		? `https://pay.google.com/gp/v/a/pushprovisioning/saveButtonImage?hl=${encodeURIComponent(locale)}`
-		: "https://pay.google.com/gp/v/a/pushprovisioning/saveButtonImage";
+	const { start } = useGooglePayProvisioning(card, {
+		onSuccess: (payload) => {
+			console.info("Google Pay provisioning success:", payload);
+			if (payload.tokenResult === 1) {
+				alert("¡Tarjeta agregada a Google Pay!");
+			} else if (payload.cardResult === 1) {
+				alert("¡Tarjeta guardada en tu cuenta Google!");
+			}
+		},
+		onFailure: (failure) => {
+			console.error("Google Pay provisioning failure:", failure);
+			if (failure.reason === "device-not-supported") {
+				alert("No encontramos un Android compatible en tu cuenta Google");
+			} else if (failure.reason === "cancelled") {
+				alert("Se cerró la ventana de Google Pay");
+			} else if (failure.reason === "popup-blocked") {
+				alert(
+					"Tu navegador bloqueó la ventana de Google Pay. Permití las ventanas emergentes y volvé a intentar.",
+				);
+			} else {
+				alert("No pudimos agregar la tarjeta a Google Pay");
+			}
+		},
+	});
 
 	return (
 		<button
 			type="button"
-			onClick={onClick}
-			disabled={disabled}
+			onClick={start}
 			aria-label="Agregar a Google Pay"
-			className="flex h-11.5 w-full items-center justify-center outline-none focus-visible:ring-3 focus-visible:ring-ring/50 disabled:cursor-not-allowed disabled:opacity-50"
+			className="flex h-11.5 w-full items-center justify-center outline-none focus-visible:ring-3 focus-visible:ring-ring/50"
 		>
 			<Image
-				src={imageUrl}
+				src="https://pay.google.com/gp/v/a/pushprovisioning/saveButtonImage?hl=es-419"
 				width={300}
 				height={46}
 				alt=""
