@@ -2,18 +2,12 @@ import { cn } from "cn";
 import { NfcIcon } from "lucide-react";
 import Image from "next/image";
 import { useId } from "react";
-import type { MyCard } from "@/lib/pomelo/cards";
+import type { PomeloCardResponse } from "@/lib/pomelo/cards";
 import { NetworkLogo } from "@/components/network-logo";
 
 // Visual representation of a Pomelo card: brand color, Pomelo logo, holder
 // name, last four digits and network. It never renders the full PAN.
-export function PaymentCard({
-  card,
-  holderName,
-}: {
-  card: MyCard;
-  holderName: string;
-}) {
+export function PaymentCard({ card }: { card: PomeloCardResponse }) {
   return (
     <div
       className={cn(
@@ -29,21 +23,22 @@ export function PaymentCard({
           height={32}
           draggable={false}
           className="h-8 w-auto brightness-0 invert"
+          style={{ height: "auto" }}
         />
         <NfcIcon aria-hidden className="size-7" />
       </div>
       <div className="flex items-end justify-between gap-4">
         <div className="flex min-w-0 flex-col gap-2">
           <span className="truncate font-semibold tracking-wide uppercase">
-            {holderName}
+            {card.data.name_on_card}
           </span>
           <span className="font-mono text-lg tracking-widest">
             <span aria-hidden="true">•••• </span>
             <span className="sr-only">Terminada en </span>
-            {card.lastFour}
+            {card.data.last_four}
           </span>
         </div>
-        <NetworkLogo network={card.provider} className="size-16 shrink-0" />
+        <NetworkLogo network={card.data.provider} className="size-16 shrink-0" />
       </div>
     </div>
   );
