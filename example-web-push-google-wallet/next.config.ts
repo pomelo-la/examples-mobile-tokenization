@@ -15,6 +15,15 @@ const nextConfig: NextConfig = {
       },
     },
   },
+  images: {
+    remotePatterns: [
+      {
+        protocol: "https",
+        hostname: "pay.google.com",
+        pathname: "/gp/v/a/pushprovisioning/**",
+      },
+    ],
+  },
 };
 
 export default nextConfig;
