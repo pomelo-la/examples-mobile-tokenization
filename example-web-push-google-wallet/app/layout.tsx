@@ -24,8 +24,6 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       className={`${geistSans.variable} ${geistMono.variable} antialiased`}
     >
       <body className="h-svh bg-canvas sm:flex sm:items-center sm:px-4 sm:py-10">
-        {/* Mobile-like shell: full screen on phones; from sm, a frame capped at the
-            iPhone Pro Max viewport (440x956), centered with a small margin. */}
         <main className="relative mx-auto flex h-svh w-full max-w-[440px] flex-col overflow-hidden bg-background sm:h-full sm:max-h-[956px] sm:rounded-[2.5rem] sm:border sm:shadow-2xl">
           {children}
         </main>
