@@ -2,6 +2,7 @@ import { connection } from "next/server";
 import { Suspense } from "react";
 import { PaymentCard } from "@/components/payment-card";
 import { getCard } from "@/lib/pomelo/cards";
+import { AddToGooglePayButton } from "@/components/add-to-google-pay-button";
 
 async function CardSection() {
   // Card data is request-time data: fetch it inside <Suspense> so the route
@@ -39,6 +40,7 @@ export default function Home() {
         <h1 className="text-4xl font-bold tracking-tight">Mis tarjetas</h1>
         <Suspense fallback={<CardSkeleton />}>
           <CardSection />
+          <AddToGooglePayButton/>
         </Suspense>
       </div>
     </div>

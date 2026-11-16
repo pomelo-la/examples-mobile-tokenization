@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
+import Script from "next/script";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -24,6 +25,9 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       className={`${geistSans.variable} ${geistMono.variable} antialiased`}
     >
       <body className="h-svh bg-canvas sm:flex sm:items-center sm:px-4 sm:py-10">
+        {/* Google Pay Unified Web Push Provisioning library (window.googlepay) */}
+        <Script src="/integration-1.6.min.js" strategy="beforeInteractive" />
+
         <main className="relative mx-auto flex h-svh w-full max-w-[440px] flex-col overflow-hidden bg-background sm:h-full sm:max-h-[956px] sm:rounded-[2.5rem] sm:border sm:shadow-2xl">
           {children}
         </main>
