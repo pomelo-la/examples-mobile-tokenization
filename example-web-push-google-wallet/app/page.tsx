@@ -21,7 +21,12 @@ async function CardSection() {
 
   const card = await getCard(cardId);
 
-  return <PaymentCard card={card} />;
+  return (
+    <>
+      <PaymentCard card={card} />
+      <AddToGooglePayButton card={card} />
+    </>
+  );
 }
 
 function CardSkeleton() {
@@ -40,7 +45,6 @@ export default function Home() {
         <h1 className="text-4xl font-bold tracking-tight">Mis tarjetas</h1>
         <Suspense fallback={<CardSkeleton />}>
           <CardSection />
-          <AddToGooglePayButton/>
         </Suspense>
       </div>
     </div>
