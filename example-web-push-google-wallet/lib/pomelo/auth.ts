@@ -15,6 +15,16 @@ function requireEnv(name: string): string {
   return value;
 }
 
+/**
+ * Obtiene un access token de Pomelo usando el grant OAuth 2.0 client credentials.
+ *
+ * Solo del lado del servidor: el client secret identifica al emisor frente a Pomelo y nunca debe
+ * llegar al navegador. El token se cachea en memoria y se renueva un minuto antes de expirar,
+ * para que el flujo de provisioning no sume un round trip extra en cada click.
+ *
+ * Docs:
+ * https://developers.pomelo.la/api-reference/home/auth
+ */
 export async function getAccessToken(): Promise<string> {
   if (cachedToken && cachedToken.expiresAt > Date.now() + 60_000) {
     return cachedToken.value;

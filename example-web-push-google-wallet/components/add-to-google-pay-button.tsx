@@ -5,14 +5,19 @@ import { useGooglePayProvisioning } from "@/lib/google/use-google-pay-provisioni
 import type { PomeloCardResponse } from "@/lib/pomelo/cards";
 
 /**
- * "Add to Google Pay" button following Google's brand guidelines.
+ * Botón "Agregar a Google Pay" según las brand guidelines de Google.
  *
- * The image is served by Google and localized automatically based on the
- * user's locale. The `rel="opener"` attribute is required to prevent E008
- * errors during the Web Push Provisioning flow.
+ * La imagen la sirve Google y se localiza automáticamente según el idioma
+ * del usuario (acá se fuerza con `hl=es-419`). El atributo `rel="opener"` es
+ * obligatorio para evitar errores E008 durante el flujo de Web Push Provisioning.
  *
- * Reserve width between 100 to 300px for the button; actual size depends on
- * the user's locale.
+ * Hay que reservar entre 100 y 300px de ancho para el botón; el tamaño real
+ * depende del idioma. Google recomienda ocultar el botón en navegadores no
+ * soportados (solo las últimas versiones de Chrome, Firefox, Edge y Safari).
+ *
+ * Docs:
+ * https://developers.google.com/pay/issuers/apis/push-provisioning/web/frontend-javascript-api#brand_guidelines
+ * https://developers.google.com/pay/issuers/apis/push-provisioning/web/frontend-javascript-api#supported_browsers
  */
 export function AddToGooglePayButton({
 	card,
@@ -22,6 +27,9 @@ export function AddToGooglePayButton({
 	const { start } = useGooglePayProvisioning(card, {
 		onSuccess: (payload) => {
 			console.info("Google Pay provisioning success:", payload);
+			// El éxito puede ser parcial: tokenizada en el dispositivo, solo guardada
+			// en la cuenta de Google, o ambas. Se revisa cada resultado para informar
+			// al usuario qué pasó.
 			if (payload.tokenResult === 1) {
 				alert("¡Tarjeta agregada a Google Pay!");
 			} else if (payload.cardResult === 1) {
@@ -30,9 +38,7 @@ export function AddToGooglePayButton({
 		},
 		onFailure: (failure) => {
 			console.error("Google Pay provisioning failure:", failure);
-			if (failure.reason === "device-not-supported") {
-				alert("No encontramos un Android compatible en tu cuenta Google");
-			} else if (failure.reason === "cancelled") {
+			if (failure.reason === "cancelled") {
 				alert("Se cerró la ventana de Google Pay");
 			} else if (failure.reason === "popup-blocked") {
 				alert(
@@ -44,6 +50,8 @@ export function AddToGooglePayButton({
 		},
 	});
 
+	// `start` se asocia directo al click para que `openAppWindow` corra dentro del
+	// gesto del usuario; agregar trabajo asincrónico antes haría que se bloquee la ventana.
 	return (
 		<button
 			type="button"

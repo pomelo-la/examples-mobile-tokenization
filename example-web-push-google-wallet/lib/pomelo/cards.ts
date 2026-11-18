@@ -2,6 +2,15 @@ import { getAccessToken } from "@/lib/pomelo/auth";
 
 export type CardProvider = "VISA" | "MASTERCARD";
 
+/**
+ * Subconjunto de la tarjeta de Pomelo que usa el flujo de provisioning:
+ * - `id`: se envía a Pomelo para generar las OPCs.
+ * - `provider`: define el endpoint de Pomelo y el `cardNetwork` de Google.
+ * - `last_four` y `name_on_card`: datos no sensibles que Google le muestra al usuario
+ *   (`PaymentCredentials.lastDigits` / `displayName`).
+ *
+ * El sitio nunca necesita el PAN completo: solo viaja encriptado dentro de las OPCs.
+ */
 export interface PomeloCardResponse {
   data: {
     id: string;

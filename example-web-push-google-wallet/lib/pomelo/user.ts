@@ -1,11 +1,18 @@
 import type { UserAddress } from "@/lib/google/google-pay-types";
 
 /**
- * Simulated GET endpoint that returns hardcoded user data.
- * In a real implementation, this would fetch the user's data from the backend.
+ * Endpoint GET simulado que devuelve datos de usuario hardcodeados.
+ * En una implementación real, estos datos se obtendrían del backend del emisor.
+ *
+ * La dirección se envía a Google en `PaymentCredentials.userAddress` y se usa para precargar la
+ * dirección de facturación del tarjetahabiente. Debe ser la dirección del dueño de la tarjeta
+ * registrada en el emisor. `countryCode` tiene que ser un código ISO 3166-1 alpha-2 ("AR", no "ARG").
+ *
+ * Docs:
+ * https://developers.google.com/pay/issuers/apis/push-provisioning/web/frontend-javascript-api#useraddress_object
  */
 export async function getUserAddress(): Promise<UserAddress> {
-	// Simulate network delay
+	// Simula la latencia de red
 	await new Promise((resolve) => setTimeout(resolve, 100));
 
 	return {
