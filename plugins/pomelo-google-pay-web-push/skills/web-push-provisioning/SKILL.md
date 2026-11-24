@@ -119,7 +119,7 @@ El objetivo es que el usuario llegue a producción lo más directo posible. El r
 
 **2. Dónde se hizo.** Una lista de archivos con su ruta (como links) y una línea por archivo explicando qué cambió: el endpoint de backend, el cliente de Pomelo, el botón, el flujo de `onSessionCreated`, las variables de entorno nuevas. Aclará los placeholders que dejaste.
 
-**Diagrama.** Después de "Dónde se hizo", incluí un diagrama de secuencia en Mermaid de cómo quedó la integración en este proyecto, con sus capas, rutas y archivos reales. Dibujalo para que se vea renderizado (como artifact si tenés la herramienta); no lo dejes solo como código en la terminal. Plantilla, reglas y cómo mostrarlo: [references/diagram.md](references/diagram.md).
+**Diagrama.** Después de "Dónde se hizo", dibujá en la respuesta, en un bloque de código de texto (ASCII), un diagrama de secuencia de cómo quedó la integración en este proyecto, con sus capas, rutas y archivos reales. No lo publiques ni crees archivos para mostrarlo. Plantilla y reglas: [references/diagram.md](references/diagram.md).
 
 **3. Qué queda pendiente.** Una checklist numerada, en el orden en que conviene hacerlo. Cada ítem dice **qué hacer, por qué y dónde**, con el link correspondiente. Incluí solo los que apliquen y completá los que dependan del proyecto (por ejemplo, el nombre real de la variable o el archivo donde va):
 
