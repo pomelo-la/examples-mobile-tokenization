@@ -1,0 +1,14 @@
+{
+  "name": "pomelo-tokenization",
+  "description": "Skills de Pomelo para integrar tokenización de tarjetas.",
+  "owner": {
+    "name": "Pomelo"
+  },
+  "plugins": [
+    {
+      "name": "pomelo-google-pay-web-push",
+      "source": "./plugins/pomelo-google-pay-web-push",
+      "description": "Integra Google Pay Web Push Provisioning con la API de Pomelo en un sitio web existente."
+    }
+  ]
+}

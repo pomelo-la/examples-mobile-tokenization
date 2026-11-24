@@ -44,3 +44,6 @@ next-env.d.ts
 
 # Lib Google
 /public/integration-1.6.min.js
+
+# Docs private
+/google-wallet-uwp
