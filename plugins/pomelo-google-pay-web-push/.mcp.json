@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "pomelo-api-reference": {
+      "type": "http",
+      "url": "https://api-reference-mcp.pomelo.la/mcp"
+    }
+  }
+}
