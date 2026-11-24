@@ -59,7 +59,10 @@ Antes de escribir código, identificá:
 
 - **Frontend**: framework (HTML/JS plano, React, Next.js, Angular, Vue...) y dónde se muestra la tarjeta.
 - **Backend**: lenguaje y framework, cómo se manejan las variables de entorno y si ya existe un cliente de la API de Pomelo (autenticación, base URL).
-- **Dónde vive la integración con Pomelo**: en muchos proyectos la app la sirve un BFF (backend for frontend) y las llamadas a Pomelo están en **otra API**. Buscá el cliente de Pomelo (`POMELO_*`, `api.pomelo.la`, `/oauth/token`, `/cards/v1`) y cómo el frontend llega a los datos de la tarjeta. Si el repo tiene credenciales y cliente de Pomelo, la integración vive acá. Si no los tiene pero llama a otra API interna para leer la tarjeta, vive en esa API. **Si no se puede deducir, preguntá** dónde está, con las opciones: "en este mismo backend", "en otra API (el BFF solo la llama)", "no existe todavía". En modo no interactivo, asumí que vive en este backend y avisalo en los pendientes.
+- **Dónde vive la integración con Pomelo**: en muchos proyectos la app la sirve un BFF (backend for frontend) y las llamadas a Pomelo están en **otra API**. Buscá el cliente de Pomelo (`POMELO_*`, `api.pomelo.la`, `/oauth/token`, `/cards/v1`) y cómo el frontend llega a los datos de la tarjeta.
+  - Si el repo ya tiene cliente y credenciales de Pomelo, la integración vive acá: seguí.
+  - **En cualquier otro caso preguntá**, también si el repo no llama a ninguna otra API: que no haya un cliente de Pomelo en este repo no significa que la integración no exista en otro servicio. Opciones: "en este mismo backend", "en otra API (este repo es el BFF)", "no existe todavía, hay que crearla acá".
+  - **Nunca crees un cliente de Pomelo nuevo (OAuth, credenciales) sin confirmarlo.** En modo no interactivo, creá solo lo necesario en este repo y dejá en el resumen esta decisión marcada como supuesto a confirmar.
 - **Dónde va el botón**: buscá la pantalla de **detalle de la tarjeta**, la que muestra la tarjeta y sus acciones (pausar o bloquear, denunciar, ver movimientos, cambiar PIN, etc.). Ahí va el botón, junto a esas acciones. Buscá por rutas y componentes (`card`, `tarjeta`, `card-detail`, `cartao`), por textos de las acciones y por el lugar donde ya se consulta la tarjeta. **Si no hay una pantalla clara, o hay varias candidatas, preguntá** dónde mostrarlo, con las candidatas que encontraste como opciones. En modo no interactivo, elegí la más probable y avisalo en el resumen.
 - **Datos de la tarjeta disponibles en el frontend**: id de Pomelo (`crd-...`), marca (`VISA` / `MASTERCARD`), últimos 4 dígitos y nombre. Si faltan, hay que exponerlos desde el backend **antes** del click.
 - **Dirección del tarjetahabiente** para `userAddress`: de dónde sale (el backend del emisor, normalmente). `countryCode` es ISO 3166-1 alpha-2 (`AR`, no `ARG`).
@@ -94,6 +97,18 @@ Validá que el usuario autenticado sea dueño de `cardId` antes de pedir las OPC
 
 Código de referencia, tipos y variantes por framework: [references/frontend.md](references/frontend.md).
 
+### Documentar el código que generás
+
+El código que dejás en el proyecto tiene que explicar el flujo, igual que el [ejemplo del repo](https://github.com/pomelo-la/examples-mobile-tokenization/tree/develop/example-web-push-google-wallet). Un desarrollador que nunca vio push provisioning debe poder entender qué hace cada pieza leyendo solo los comentarios. Reglas y ejemplos: [references/comments.md](references/comments.md). Resumen:
+
+- Comentarios en el **idioma del proyecto** (español si no se sabe), con JSDoc/KDoc en funciones, tipos y componentes.
+- Cada archivo nuevo abre con un comentario de **qué rol cumple en el flujo** y desde dónde se lo invoca.
+- Cada función dice **qué hace y por qué**, no repite el código. Las reglas no obvias (orden de `openAppWindow`, `TextEncoder`, `closeAppWindow`, `provisioning_target`) llevan su motivo.
+- Los pasos de `onSessionCreated` van **numerados** con un comentario por paso.
+- Un bloque `Docs:` con el link oficial (Google o Pomelo) donde aplique.
+- Los placeholders se marcan con `TODO(emisor):` y dicen qué hay que reemplazar y por qué.
+- No expliques conceptos del framework (Next, React, Express...), solo el flujo de push provisioning.
+
 ### 4. Verificar
 
 No es posible probar el flujo de punta a punta desde el agente: Pomelo no soporta un ambiente de test y Google no permite `localhost` (valida el origin contra una allowlist). Revisá el código contra esta checklist:
@@ -113,15 +128,21 @@ Si el proyecto tiene linter, type checker o tests, correlos.
 
 ### 5. Cerrar con un resumen que acompañe al usuario
 
-El objetivo es que el usuario llegue a producción lo más directo posible. El resumen final tiene siempre estas partes, en este orden: qué se hizo, dónde se hizo (con el diagrama) y qué queda pendiente.
+El objetivo es que el usuario llegue a producción lo más directo posible. El resumen final tiene siempre estas partes, en este orden: qué se hizo, decisiones y supuestos, dónde se hizo (con el diagrama) y qué queda pendiente.
 
-**1. Qué se hizo.** Una o dos frases con el resultado y las marcas soportadas.
+**1. Qué se hizo.** Un párrafo que dice el resultado, las marcas soportadas y si se pudo verificar (compila, linter, tests; y que la prueba de punta a punta no es posible desde acá). No es una lista de archivos.
 
-**2. Dónde se hizo.** Una lista de archivos con su ruta (como links) y una línea por archivo explicando qué cambió: el endpoint de backend, el cliente de Pomelo, el botón, el flujo de `onSessionCreated`, las variables de entorno nuevas. Aclará los placeholders que dejaste.
+**2. Decisiones y supuestos.** Una lista de cada decisión que tomaste y **por qué**, con una marca clara en las que el usuario debe confirmar:
+- marca de las tarjetas (dedujiste, preguntaste o asumiste) y cómo queda para agregar la otra;
+- dónde vive la integración con Pomelo y por qué (este backend, API separada) y qué capas se tocaron;
+- en qué pantalla quedó el botón y por qué esa;
+- cómo se resolvió lo que no existía (usuario autenticado, dirección del tarjetahabiente, datos de la tarjeta) y que es provisorio.
+
+**3. Dónde se hizo.** Una entrada por archivo, con su ruta como link, **qué cambió y qué función cumple en el flujo y por qué existe**. No alcanza con nombrar el archivo: por ejemplo, "`lib/pomelo.ts`: cliente de Pomelo. Pide el access token (OAuth) y lo cachea porque el token dura minutos; elige el endpoint por marca porque Visa y Mastercard tienen rutas distintas con el mismo body".
 
 **Diagrama.** Después de "Dónde se hizo", dibujá en la respuesta, en un bloque de código de texto (ASCII), un diagrama de secuencia de cómo quedó la integración en este proyecto, con sus capas, rutas y archivos reales. No lo publiques ni crees archivos para mostrarlo. Plantilla y reglas: [references/diagram.md](references/diagram.md).
 
-**3. Qué queda pendiente.** Una checklist numerada, en el orden en que conviene hacerlo. Cada ítem dice **qué hacer, por qué y dónde**, con el link correspondiente. Incluí solo los que apliquen y completá los que dependan del proyecto (por ejemplo, el nombre real de la variable o el archivo donde va):
+**4. Qué queda pendiente.** Una checklist numerada, en el orden en que conviene hacerlo. Cada ítem dice **qué hacer, por qué y dónde**, con el link correspondiente. Incluí solo los que apliquen y completá los que dependan del proyecto (por ejemplo, el nombre real de la variable o el archivo donde va):
 
 0. **Si falta la otra capa (BFF o API):** va primero. Pegá el texto de traspaso de [references/handoff.md](references/handoff.md) adaptado al proyecto, listo para copiar y pasar al otro equipo.
 1. **Descargar la librería de Google** (`integration.min.js`) de la [documentación oficial](https://developers.google.com/pay/issuers/apis/push-provisioning/web/frontend-javascript-api) y servirla desde el sitio, en la ruta que carga el código. Sin ella, `window.googlepay` no existe y el botón no hace nada. Requiere tener acceso a esa documentación.
