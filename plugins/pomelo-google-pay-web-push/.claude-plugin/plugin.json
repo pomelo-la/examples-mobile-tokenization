@@ -1,6 +1,6 @@
 {
   "name": "pomelo-google-pay-web-push",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "Integra Google Pay Web Push Provisioning con la API de Pomelo en un sitio web existente: botón \"Agregar a Google Pay\", openAppWindow, generación de la TSP OPC y la Google OPC, y manejo de resultados.",
   "author": {
     "name": "Pomelo"
