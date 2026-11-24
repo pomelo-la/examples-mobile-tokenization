@@ -43,20 +43,40 @@ Estas reglas son la causa de la mayoría de las integraciones rotas. Cumplilas t
 
 ## Flujo de trabajo
 
-### 1. Relevar el proyecto
+### 0. Preguntar la marca de las tarjetas
+
+La integración depende de la marca: el endpoint de Pomelo es distinto para Visa y para Mastercard (el body es el mismo). Los emisores de Pomelo suelen emitir **Visa o Mastercard**, y a veces **ambas**.
+
+1. **Deducila primero** del proyecto: buscá `VISA` / `MASTERCARD` / `visa` / `mastercard` en el código, los modelos de tarjeta, las respuestas de la API de Pomelo y la configuración.
+2. **Si no se puede deducir, preguntá** antes de escribir código, con una sola pregunta de opción múltiple (usá `AskUserQuestion` si está disponible): "¿Qué marcas de tarjeta emiten con Pomelo?" con las opciones Visa, Mastercard, Ambas.
+3. **Si no podés preguntar** (modo no interactivo), asumí ambas marcas, porque cubre todos los casos.
+
+Con una sola marca, igual elegí el endpoint a partir de la marca de la tarjeta (no lo fijes en el código): así agregar la otra marca después no requiere cambios.
+
+### 1. Relevar el proyecto y elegir dónde va el botón
 
 Antes de escribir código, identificá:
 
 - **Frontend**: framework (HTML/JS plano, React, Next.js, Angular, Vue...) y dónde se muestra la tarjeta.
 - **Backend**: lenguaje y framework, cómo se manejan las variables de entorno y si ya existe un cliente de la API de Pomelo (autenticación, base URL).
+- **Dónde vive la integración con Pomelo**: en muchos proyectos la app la sirve un BFF (backend for frontend) y las llamadas a Pomelo están en **otra API**. Buscá el cliente de Pomelo (`POMELO_*`, `api.pomelo.la`, `/oauth/token`, `/cards/v1`) y cómo el frontend llega a los datos de la tarjeta. Si el repo tiene credenciales y cliente de Pomelo, la integración vive acá. Si no los tiene pero llama a otra API interna para leer la tarjeta, vive en esa API. **Si no se puede deducir, preguntá** dónde está, con las opciones: "en este mismo backend", "en otra API (el BFF solo la llama)", "no existe todavía". En modo no interactivo, asumí que vive en este backend y avisalo en los pendientes.
+- **Dónde va el botón**: buscá la pantalla de **detalle de la tarjeta**, la que muestra la tarjeta y sus acciones (pausar o bloquear, denunciar, ver movimientos, cambiar PIN, etc.). Ahí va el botón, junto a esas acciones. Buscá por rutas y componentes (`card`, `tarjeta`, `card-detail`, `cartao`), por textos de las acciones y por el lugar donde ya se consulta la tarjeta. **Si no hay una pantalla clara, o hay varias candidatas, preguntá** dónde mostrarlo, con las candidatas que encontraste como opciones. En modo no interactivo, elegí la más probable y avisalo en el resumen.
 - **Datos de la tarjeta disponibles en el frontend**: id de Pomelo (`crd-...`), marca (`VISA` / `MASTERCARD`), últimos 4 dígitos y nombre. Si faltan, hay que exponerlos desde el backend **antes** del click.
 - **Dirección del tarjetahabiente** para `userAddress`: de dónde sale (el backend del emisor, normalmente). `countryCode` es ISO 3166-1 alpha-2 (`AR`, no `ARG`).
 
-Si falta información que no se puede deducir (por ejemplo, el `integratorId` o el nombre de las variables de entorno), usá un placeholder claro o una variable de entorno y avisalo al final.
+Si falta información que no se puede deducir (por ejemplo, el `integratorId` o el nombre de las variables de entorno), usá un placeholder claro o una variable de entorno y avisalo en los pendientes del resumen final.
 
 ### 2. Backend: endpoint de OPCs
 
-Agregá un endpoint propio (por ejemplo `POST /api/google-pay/opcs`) que reciba `cardId`, `provisioningTarget`, `serverSessionId`, `deviceId` y `walletAccountId`, y que:
+**Una sola capa:** si la integración con Pomelo vive en este backend, hacé todo acá, como se describe abajo.
+
+**BFF y API separadas:** el navegador solo habla con el BFF, y las credenciales de Pomelo viven solo en la API que ya las tiene. Repartí el trabajo así:
+
+- **API con la integración de Pomelo:** el endpoint de OPCs (cliente OAuth, endpoint por marca, `provisioning_target`) y la validación de que la tarjeta pertenece al usuario. Esa validación va siempre en la API, no solo en el BFF.
+- **BFF:** un endpoint que recibe el pedido del frontend y lo reenvía a la API, reenviando la identidad del usuario. No agregues credenciales de Pomelo ni un cliente de Pomelo al BFF.
+- **Si el repo es solo una de las dos capas:** implementá esa capa y dejá la otra como pendiente. En el resumen final incluí el texto de traspaso de [references/handoff.md](references/handoff.md), adaptado al proyecto: qué hace el servicio, un `curl` de ejemplo del contrato y los links a la documentación de Pomelo, para que el equipo dueño del otro repo lo implemente sin contexto previo.
+
+El endpoint de OPCs (en la API, o en el único backend) es el que sigue. Agregá un endpoint (por ejemplo `POST /api/google-pay/opcs`) que reciba `cardId`, `provisioningTarget`, `serverSessionId`, `deviceId` y `walletAccountId`, y que:
 
 1. Obtenga un access token de Pomelo (OAuth 2.0 client credentials) y lo cachee hasta que expire.
 2. Elija el endpoint según la marca de la tarjeta y llame a Pomelo con `provisioning_target`.
@@ -85,24 +105,36 @@ No es posible probar el flujo de punta a punta desde el agente: Pomelo no soport
 - [ ] `tokenCredentials` solo si `tokenSetting === 1`; `cardCredentials` solo si `cardSetting === 1`.
 - [ ] Las OPCs se convierten con `TextEncoder`, sin decodificar el base64.
 - [ ] Si falla el pedido de OPCs se llama a `closeAppWindow()`.
-- [ ] `client_secret` y el token de Pomelo solo existen en el backend.
+- [ ] `client_secret` y el token de Pomelo solo existen en el backend. Con BFF y API separadas, solo en la API, nunca en el BFF.
 - [ ] El endpoint de Pomelo depende de la marca (`visa` / `mastercard`) y el body es el mismo.
 - [ ] `onSuccess` contempla éxito parcial (`tokenResult` / `cardResult`).
 
 Si el proyecto tiene linter, type checker o tests, correlos.
 
-### 5. Cerrar con los pasos pendientes del emisor
+### 5. Cerrar con un resumen que acompañe al usuario
 
-Al terminar, listá al usuario lo que tiene que resolver fuera del código:
+El objetivo es que el usuario llegue a producción lo más directo posible. El resumen final tiene siempre estas partes, en este orden: qué se hizo, dónde se hizo (con el diagrama) y qué queda pendiente.
 
-- Descargar la librería de Google desde la [documentación oficial](https://developers.google.com/pay/issuers/apis/push-provisioning/web/frontend-javascript-api) y servirla desde el sitio.
-- Obtener el `integratorId` (Merchant ID) en la Issuer Console de Google.
-- Registrar en Google los origins donde se muestra el botón (si no, `E102`).
-- Para guardar la tarjeta en la cuenta de Google: completar el formulario de Google indicando que Pomelo es su program manager (si no, `E114`).
-- Configurar las credenciales OAuth de Pomelo en el backend.
-- Probar desde la URL registrada en Google: no funciona en `localhost` y Pomelo no tiene ambiente de test.
+**1. Qué se hizo.** Una o dos frases con el resultado y las marcas soportadas.
 
-Errores frecuentes y cómo resolverlos: [references/troubleshooting.md](references/troubleshooting.md).
+**2. Dónde se hizo.** Una lista de archivos con su ruta (como links) y una línea por archivo explicando qué cambió: el endpoint de backend, el cliente de Pomelo, el botón, el flujo de `onSessionCreated`, las variables de entorno nuevas. Aclará los placeholders que dejaste.
+
+**Diagrama.** Después de "Dónde se hizo", incluí un diagrama de secuencia en Mermaid de cómo quedó la integración en este proyecto, con sus capas, rutas y archivos reales. Plantilla y reglas: [references/diagram.md](references/diagram.md).
+
+**3. Qué queda pendiente.** Una checklist numerada, en el orden en que conviene hacerlo. Cada ítem dice **qué hacer, por qué y dónde**, con el link correspondiente. Incluí solo los que apliquen y completá los que dependan del proyecto (por ejemplo, el nombre real de la variable o el archivo donde va):
+
+0. **Si falta la otra capa (BFF o API):** va primero. Pegá el texto de traspaso de [references/handoff.md](references/handoff.md) adaptado al proyecto, listo para copiar y pasar al otro equipo.
+1. **Descargar la librería de Google** (`integration.min.js`) de la [documentación oficial](https://developers.google.com/pay/issuers/apis/push-provisioning/web/frontend-javascript-api) y servirla desde el sitio, en la ruta que carga el código. Sin ella, `window.googlepay` no existe y el botón no hace nada. Requiere tener acceso a esa documentación.
+2. **Obtener el `integratorId`** (Merchant ID) en la Issuer Console de Google y cargarlo en la variable de entorno indicada.
+3. **Configurar las credenciales de Pomelo** en el backend (`POMELO_CLIENT_ID`, `POMELO_CLIENT_SECRET`, `POMELO_AUDIENCE`, `POMELO_BASE_URL`, o los nombres que use el proyecto). Nunca en el frontend. Doc: [Autenticación](https://developers.pomelo.la/api-reference/home/auth).
+4. **Resolver autenticación y datos reales**, si el proyecto tiene placeholders:
+   - Que el backend devuelva la tarjeta solo si pertenece al usuario autenticado. Sin eso, cualquiera que conozca un `cardId` podría pedir OPCs.
+   - La dirección real del tarjetahabiente para `userAddress` (`countryCode` en ISO alpha-2).
+5. **Registrar en Google los origins** donde se muestra el botón. Si no, el popup falla con `E102`.
+6. **Completar el formulario de Google** indicando que Pomelo es su program manager, para poder guardar la tarjeta en la cuenta de Google. Si no, falla con `E114`.
+7. **Probar de punta a punta** desde una URL registrada en Google y con una tarjeta real. No funciona en `localhost` y Pomelo no tiene ambiente de test: hay que desplegar a la URL declarada en Google. Si algo falla, [references/troubleshooting.md](references/troubleshooting.md) mapea cada código de error (`E1xx`-`E4xx`) a su causa.
+
+Cerrá con los links útiles: la [API de Google](https://developers.google.com/pay/issuers/apis/push-provisioning/web/frontend-javascript-api), la [API de Pomelo](https://developers.pomelo.la/api-reference/tokenization/push-provisioning/provisioning-visa-in-google-pay-upp) y el [ejemplo completo](https://github.com/pomelo-la/examples-mobile-tokenization/tree/develop/example-web-push-google-wallet).
 
 ## MCP de Pomelo
 
